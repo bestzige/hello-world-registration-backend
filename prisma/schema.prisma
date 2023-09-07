@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String   @id @default(cuid())
+  name     String
+  email    String
+  password String
+  image    String?
+  role     UserRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registration Registration?
+
+  @@map("users")
+}
+
+model Subject {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  image       String?
+  background  String?
+
+  startDate DateTime @default(now())
+  endDate   DateTime @default(now())
+
+  registrationLimit Int @default(-1)
+  acceptingLimit    Int @default(-1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registrations Registration[]
+  questions     Question[]
+
+  @@map("subjects")
+}
+
+model Question {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  type         QuestionFieldType @default(TEXT)
+  required     Boolean           @default(false)
+  defaultValue String?
+  // This is a JSON string
+  // Map like this:
+  // [
+  //   {
+  //     label: 'Option 1',
+  //     value: 'option-1',
+  //   },
+  // ]
+  options      String?           @default("[]")
+  image        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId String
+
+  @@map("questions")
+}
+
+model Registration {
+  id String @id @default(cuid())
+
+  // This is a JSON string
+  // Map like this:
+  // [
+  //   {
+  //     questionId: 'question-1',
+  //     value: 'Answer 1',
+  //   },
+  // ]
+  data String? @default("[]")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
+  subject   Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  subjectId String?
+
+  approved Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("registrations")
+}
+
+enum QuestionFieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  DATE
+  TIME
+  DATETIME
+  SELECT
+  RADIO
+  CHECKBOX
+  URL
+  EMAIL
+  PASSWORD
+  TEL
+  COLOR
+  RANGE
+  HIDDEN
+  MONTH
+  WEEK
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  MEMBER
+}
